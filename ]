@@ -25,14 +25,11 @@ impl ThreadPool {
         for id in 0..size {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
-        ThreadPool {
-            workers,
-            sender: Some(sender),
-        }
+        ThreadPool { workers, sender:Some(sender)}
     }
     pub fn execute<F>(&self, f: F)
     where
-        F: FnOnce() + Send + 'static,
+        F: FnOnce() + Send + 'static
     {
         let job = Box::new(f);
         self.sender.as_ref().unwrap().send(job).unwrap();
@@ -42,16 +39,13 @@ impl ThreadPool {
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
+            let job = receiver.lock().unwrap().recv().unwrap();
             let message = receiver.lock().unwrap().recv();
-            match message {
-                Ok(job) => {
-                    println!("worker {id} got a job and execuing");
+            match message{
+                Ok(job)=>{
+                    println!("worker {id} got a job and execuing")
                     job();
-                }
-                Err(_) => {
-                    println!("worker {id} disconnected and closing");
-                    break;
-                }
+                },
             }
         });
         Worker {
